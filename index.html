@@ -83,9 +83,12 @@
       background: var(--background-color);
       color: var(--text-color);
       line-height: 1.6;
-      height: 100vh;
+      height: 100vh; /* Fallback */
+      height: calc(var(--vh, 1vh) * 100); /* Use the custom --vh variable */
       display: flex;
       overflow: hidden;
+      width: 100%;
+      position: fixed; /* Prevent bounce on iOS */
     }
     
     /* Custom scrollbar */
@@ -110,7 +113,7 @@
     #app-container {
       display: flex;
       width: 100%;
-      height: 100vh;
+      height: 100%; /* Change to 100% instead of var(--app-height) */
       overflow: hidden;
     }
     
@@ -356,13 +359,24 @@
     }
     
     #mobile-menu-button {
-      display: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       background: transparent;
       border: none;
       color: var(--light-text);
       font-size: 1.2rem;
       cursor: pointer;
       margin-right: 10px;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      transition: background-color 0.2s;
+    }
+
+    #mobile-menu-button:hover {
+      background-color: var(--button-hover);
+      color: var(--text-color);
     }
     
     #chatlog {
@@ -731,20 +745,25 @@
     
     @media (max-width: 768px) {
       #sidebar {
-        position: absolute;
+        position: fixed;
         top: 0;
         left: 0;
         bottom: 0;
+        width: 85%;
+        max-width: 280px;
         transform: translateX(-100%);
         transition: transform 0.3s ease;
+        z-index: 1000;
+        box-shadow: none;
       }
       
       #sidebar.visible {
         transform: translateX(0);
+        box-shadow: 0 0 15px var(--shadow-color);
       }
       
       #mobile-menu-button {
-        display: block;
+        display: flex;
       }
       
       #chat-header {
@@ -763,6 +782,105 @@
       .message-actions {
         flex-wrap: wrap;
       }
+      
+      /* Prevent scrolling when sidebar is open */
+      body.sidebar-open {
+        overflow: hidden;
+        position: fixed;
+        width: 100%;
+        height: 100%;
+      }
+      
+      /* Ensure sidebar overlay covers entire screen */
+      .sidebar-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 999;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s ease;
+      }
+      
+      .sidebar-overlay.visible {
+        opacity: 1;
+        pointer-events: auto;
+      }
+      
+      /* Fix for mobile Safari bottom bar */
+      #main-content {
+        height: 100%; 
+        display: flex;
+        flex-direction: column;
+      }
+      
+      /* Make chatlog take remaining space */
+      #chatlog {
+        flex: 1;
+        height: 0; /* This forces it to respect flex sizing */
+      }
+      
+      /* Ensure input area stays visible */
+      #input-area {
+        flex-shrink: 0;
+      }
+      
+      /* Improve tap target sizes */
+      .message-action-button {
+        min-height: 36px;
+        min-width: 60px;
+        padding: 8px 12px;
+      }
+      
+      /* Fix code blocks on small screens */
+      .message-content pre {
+        max-width: calc(100vw - 60px);
+      }
+      
+      .message-content {
+        width: 100%;
+        overflow-wrap: break-word;
+      }
+      
+      /* Fix long words breaking layout */
+      .message-body {
+        max-width: calc(100vw - 80px);
+        overflow-wrap: break-word;
+      }
+    }
+
+    /* iPhone SE and other very small devices */
+    @media (max-width: 320px) {
+      #input-area {
+        margin: 0 4px 4px;
+        padding: 8px;
+      }
+      
+      #chatlog {
+        padding: 10px;
+        gap: 15px;
+      }
+      
+      .message-actions {
+        flex-wrap: wrap;
+        gap: 5px;
+      }
+      
+      .message-action-button {
+        flex: 1;
+        justify-content: center;
+        min-width: 0;
+      }
+    }
+
+    /* Notched iPhone specific fixes */
+    @supports (padding-bottom: env(safe-area-inset-bottom)) {
+      #input-area {
+        padding-bottom: calc(16px + env(safe-area-inset-bottom));
+      }
     }
 
     /* Dark mode specific styles */
@@ -773,7 +891,76 @@
     body.dark-mode .code-header {
       background-color: rgba(255,255,255,0.05);
     }
+
+    @media (min-width: 769px) {
+      /* Desktop styles - sidebar is visible by default */
+      #sidebar {
+        transform: translateX(0);
+        position: relative;
+        min-width: 280px;
+        max-width: 280px;
+      }
+      
+      /* Hide menu button on desktop */
+      #mobile-menu-button {
+        display: none;
+      }
+      
+      /* Adjust main content to accommodate visible sidebar */
+      #main-content {
+        width: calc(100% - 280px);
+      }
+    }
+
+    @media (max-width: 768px) {
+      /* Mobile styles - sidebar is hidden by default */
+      #sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 85%;
+        max-width: 280px;
+        transform: translateX(-100%);
+        z-index: 1000;
+        box-shadow: none;
+      }
+      
+      #sidebar.visible {
+        transform: translateX(0);
+        box-shadow: 0 0 15px var(--shadow-color);
+      }
+      
+      /* Show menu button on mobile */
+      #mobile-menu-button {
+        display: flex;
+      }
+      
+      /* Main content takes full width */
+      #main-content {
+        width: 100%;
+      }
+    }
   </style>
+  <script>
+    // Mobile viewport height fix (especially for iOS Safari)
+    function fixMobileViewportHeight() {
+      // First we get the viewport height and multiply it by 1% to get a value for a vh unit
+      let vh = window.innerHeight * 0.01;
+      // Then we set the value in the --vh custom property to the root of the document
+      document.documentElement.style.setProperty('--vh', `${vh}px`);
+      
+      // Also update the app-height variable
+      document.documentElement.style.setProperty('--app-height', `${window.innerHeight}px`);
+    }
+    
+    // Run the function on initial load
+    window.addEventListener('DOMContentLoaded', fixMobileViewportHeight);
+    
+    // Run the function on resize and orientation change
+    window.addEventListener('resize', fixMobileViewportHeight);
+    window.addEventListener('orientationchange', fixMobileViewportHeight);
+  </script>
 </head>
 <body>
   <div id="app-container">
@@ -812,11 +999,11 @@
           <button id="mobile-menu-button">
             <i class="fas fa-bars"></i>
           </button>
-          <div class="model-selector">
+          <!-- <div class="model-selector">
             <i class="fas fa-bolt"></i>
             Gemini 2.0 Flash
             <i class="fas fa-chevron-down"></i>
-          </div>
+          </div> -->
         </div>
         
         <div class="header-actions">
@@ -899,6 +1086,39 @@
     const chatHistoryContainer = document.getElementById('chat-history');
     const contextMenu = document.getElementById('context-menu');
     const charCounter = document.querySelector('.char-counter');
+    
+    // Menu button click handler
+    if (mobileMenuButton) {
+      mobileMenuButton.addEventListener('click', () => {
+        // Toggle sidebar visibility
+        sidebar.classList.toggle('visible');
+        
+        // Toggle body class to prevent scrolling when sidebar is open on mobile
+        document.body.classList.toggle('sidebar-open');
+        
+        // Handle overlay
+        const overlay = document.querySelector('.sidebar-overlay');
+        if (!overlay) {
+          // Create overlay if it doesn't exist
+          const newOverlay = document.createElement('div');
+          newOverlay.className = 'sidebar-overlay';
+          document.body.appendChild(newOverlay);
+          
+          // Add click handler to close sidebar when overlay is clicked
+          newOverlay.addEventListener('click', () => {
+            sidebar.classList.remove('visible');
+            newOverlay.classList.remove('visible');
+            document.body.classList.remove('sidebar-open');
+          });
+          
+          // Small delay to trigger the fade-in animation
+          setTimeout(() => newOverlay.classList.add('visible'), 10);
+        } else {
+          // Toggle existing overlay
+          overlay.classList.toggle('visible');
+        }
+      });
+    }
     
     // Chat management
     let chatHistory = JSON.parse(localStorage.getItem('geminiChatHistory')) || [];
@@ -998,21 +1218,33 @@
       alert('File upload functionality coming soon!');
     });
     
-    mobileMenuButton.addEventListener('click', () => {
-      sidebar.classList.toggle('visible');
-    });
-    
     shareChatBtn.addEventListener('click', () => {
       alert('Share functionality coming soon!');
     });
     
-    document.addEventListener('click', (e) => {
+    document.addEventListener('click', function(e) {
       if (contextMenu.style.display === 'block' && !contextMenu.contains(e.target)) {
         contextMenu.style.display = 'none';
       }
       
-      if (sidebar.classList.contains('visible') && !sidebar.contains(e.target) && e.target !== mobileMenuButton) {
+      // Don't close sidebar if clicking the menu button or the sidebar itself
+      const isClickingMenuButton = e.target === mobileMenuButton || 
+                                   mobileMenuButton.contains(e.target);
+      const isClickingSidebar = sidebar.contains(e.target);
+      
+      // Only close sidebar if it's visible and click is outside both sidebar and button
+      if (sidebar.classList.contains('visible') && 
+          !isClickingSidebar && 
+          !isClickingMenuButton) {
+        
         sidebar.classList.remove('visible');
+        
+        // Remove overlay
+        const overlay = document.querySelector('.sidebar-overlay');
+        if (overlay) overlay.classList.remove('visible');
+        
+        // Allow scrolling again
+        document.body.classList.remove('sidebar-open');
       }
     });
     
@@ -1716,6 +1948,61 @@
       // Focus back on input
       userInput.focus();
     }
+
+    // Unified function to show context menu
+    function showContextMenu(element, x, y) {
+      if (!element || !element.dataset.messageId) return;
+      
+      // Show context menu at position
+      contextMenu.style.display = 'block';
+      
+      // Position the menu
+      const menuX = Math.min(x, window.innerWidth - contextMenu.offsetWidth - 5);
+      const menuY = Math.min(y, window.innerHeight - contextMenu.offsetHeight - 5);
+      
+      contextMenu.style.top = `${menuY}px`;
+      contextMenu.style.left = `${menuX}px`;
+      
+      // Store reference to the message
+      contextMenu.dataset.messageId = element.dataset.messageId;
+    }
+
+    // Update document click handler to hide context menu
+    document.addEventListener('click', function(e) {
+      if (contextMenu.style.display === 'block' && !contextMenu.contains(e.target)) {
+        contextMenu.style.display = 'none';
+      }
+      
+      // Don't close sidebar if clicking the menu button or the sidebar itself
+      const isClickingMenuButton = e.target === mobileMenuButton || 
+                                   mobileMenuButton.contains(e.target);
+      const isClickingSidebar = sidebar.contains(e.target);
+      
+      // Only close sidebar if it's visible and click is outside both sidebar and button
+      if (sidebar.classList.contains('visible') && 
+          !isClickingSidebar && 
+          !isClickingMenuButton) {
+        
+        sidebar.classList.remove('visible');
+        
+        // Remove overlay
+        const overlay = document.querySelector('.sidebar-overlay');
+        if (overlay) overlay.classList.remove('visible');
+        
+        // Allow scrolling again
+        document.body.classList.remove('sidebar-open');
+      }
+    });
+
+    // Prevent zoom on double tap for iOS
+    let lastTouchEnd = 0;
+    document.addEventListener('touchend', function(e) {
+      const now = Date.now();
+      if (now - lastTouchEnd <= 300) {
+        e.preventDefault();
+      }
+      lastTouchEnd = now;
+    }, { passive: false });
   </script>
 </body>
 </html>
