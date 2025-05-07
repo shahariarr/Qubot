@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gemini Interactive Chat</title>
+  <title>Qubot Interactive Chat</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.7.0/styles/github-dark.min.css">
   <script src="https://cdn.jsdelivr.net/npm/marked@5.0.2/marked.min.js"></script>
@@ -967,7 +967,7 @@
     <!-- Sidebar -->
     <div id="sidebar">
       <div id="sidebar-header">
-        <h2><div class="logo-icon">G</div> Gemini</h2>
+        <h2><div class="logo-icon">Q</div> Qubot</h2>
       </div>
       
       <button id="new-chat-btn">
@@ -1001,7 +1001,7 @@
           </button>
           <!-- <div class="model-selector">
             <i class="fas fa-bolt"></i>
-            Gemini 2.0 Flash
+            Qubot
             <i class="fas fa-chevron-down"></i>
           </div> -->
         </div>
@@ -1028,7 +1028,7 @@
       
       <div id="input-area">
         <div id="input-container">
-          <textarea id="userInput" placeholder="Message Gemini..." rows="1"></textarea>
+          <textarea id="userInput" placeholder="Message Qubot..." rows="1"></textarea>
           <div class="input-buttons">
             <button class="input-button" id="voice-input" title="Voice input">
               <i class="fas fa-microphone"></i>
@@ -1158,7 +1158,7 @@
       
       // Check if chat is empty and add welcome message
       if (chatHistory.length === 0) {
-        addSystemMessage("Welcome to Gemini 2.0 Flash! How can I assist you today?");
+        addSystemMessage("Welcome to Qubot! How can I assist you today?");
       }
       
       // Setup input event listeners
@@ -1368,7 +1368,7 @@
         
         speechRecognition.onend = () => {
           voiceInputBtn.classList.remove('voice-input-active');
-          userInput.placeholder = 'Message Gemini...';
+          userInput.placeholder = 'Message Qubot...';
           isVoiceInputActive = false;
         };
         
@@ -1427,7 +1427,7 @@
       loadChatHistory();
       
       // Add welcome message
-      addSystemMessage("Welcome to Gemini 2.0 Flash! How can I assist you today?");
+      addSystemMessage("Welcome to Qubot! How can I assist you today?");
       
       // Focus input
       userInput.focus();
@@ -1618,7 +1618,7 @@
       if (type === 'user') {
         avatar.innerHTML = '<i class="fas fa-user"></i>';
       } else {
-        avatar.textContent = 'G';
+        avatar.textContent = 'Q';
       }
       
       const messageBody = document.createElement('div');
@@ -1936,7 +1936,7 @@
         }
         
         // Add bot message
-        addMessage("Gemini", botMessage, 'bot');
+        addMessage("Qubot", botMessage, 'bot');
       } catch (err) {
         // Hide loading indicator
         hideLoading();
