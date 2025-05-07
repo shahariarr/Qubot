@@ -941,6 +941,119 @@
         width: 100%;
       }
     }
+
+    /* Modal Dialog */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 1100;
+      align-items: center;
+      justify-content: center;
+      animation: fadeIn 0.2s;
+    }
+
+    .modal.visible {
+      display: flex;
+    }
+
+    .modal-content {
+      background-color: var(--chat-bg);
+      border-radius: 12px;
+      width: 90%;
+      max-width: 400px;
+      box-shadow: 0 5px 15px var(--shadow-color);
+      animation: scaleIn 0.2s;
+    }
+
+    .modal-header {
+      padding: 15px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .modal-header h3 {
+      margin: 0;
+      font-size: 1.2rem;
+      color: var(--text-color);
+    }
+
+    .modal-close {
+      background: transparent;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: var(--light-text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      transition: background-color 0.2s;
+    }
+
+    .modal-close:hover {
+      background-color: var(--button-hover);
+      color: var(--text-color);
+    }
+
+    .modal-body {
+      padding: 20px;
+      color: var(--text-color);
+    }
+
+    .modal-warning {
+      color: #f44336;
+      margin-top: 8px;
+      font-size: 0.9rem;
+    }
+
+    .modal-footer {
+      padding: 15px 20px;
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      border-top: 1px solid var(--border-color);
+    }
+
+    .modal-button {
+      padding: 10px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 500;
+      border: none;
+      transition: background-color 0.2s;
+    }
+
+    .cancel-button {
+      background-color: var(--button-hover);
+      color: var(--text-color);
+    }
+
+    .cancel-button:hover {
+      background-color: var(--border-color);
+    }
+
+    .confirm-button {
+      background-color: #f44336;
+      color: white;
+    }
+
+    .confirm-button:hover {
+      background-color: #d32f2f;
+    }
+
+    @keyframes scaleIn {
+      from { transform: scale(0.8); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
   </style>
   <script>
     // Mobile viewport height fix (especially for iOS Safari)
@@ -1066,6 +1179,24 @@
     </div>
   </div>
 
+  <!-- Delete Confirmation Modal -->
+  <div id="delete-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Clear Conversation</h3>
+        <button class="modal-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p>Are you sure you want to clear this conversation?</p>
+        <p class="modal-warning">This action cannot be undone.</p>
+      </div>
+      <div class="modal-footer">
+        <button id="delete-cancel" class="modal-button cancel-button">Cancel</button>
+        <button id="delete-confirm" class="modal-button confirm-button">Clear</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     // Configuration
     const API_KEY = "AIzaSyAWJj5YEbeY0RnlmKOBxUVCcVjnlCeqgrs"; 
@@ -1166,6 +1297,51 @@
       
       // Focus on input
       userInput.focus();
+
+      // Set up modal functionality
+      const deleteModal = document.getElementById('delete-modal');
+      const deleteConfirm = document.getElementById('delete-confirm');
+      const deleteCancel = document.getElementById('delete-cancel');
+      const modalClose = document.querySelector('.modal-close');
+      
+      // Confirm deletion
+      deleteConfirm.addEventListener('click', () => {
+        // Clear the conversation
+        chatHistory = [];
+        saveChatHistory();
+        chatlog.innerHTML = '';
+        addSystemMessage("Chat cleared. How can I assist you today?");
+        
+        // Update chat title
+        updateChatTitle("New conversation");
+        
+        // Hide the modal
+        deleteModal.classList.remove('visible');
+      });
+      
+      // Cancel deletion
+      deleteCancel.addEventListener('click', () => {
+        deleteModal.classList.remove('visible');
+      });
+      
+      // Close modal with X button
+      modalClose.addEventListener('click', () => {
+        deleteModal.classList.remove('visible');
+      });
+      
+      // Close modal if user clicks outside the modal content
+      deleteModal.addEventListener('click', (e) => {
+        if (e.target === deleteModal) {
+          deleteModal.classList.remove('visible');
+        }
+      });
+      
+      // Close modal with Escape key
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && deleteModal.classList.contains('visible')) {
+          deleteModal.classList.remove('visible');
+        }
+      });
     });
     
     // Event Listeners
@@ -1184,16 +1360,10 @@
       }
     });
     
+    // Clear chat button - show modal instead of default confirm dialog
     clearChatButton.addEventListener('click', () => {
-      if (confirm('Are you sure you want to clear this conversation?')) {
-        chatHistory = [];
-        saveChatHistory();
-        chatlog.innerHTML = '';
-        addSystemMessage("Chat cleared. How can I assist you today?");
-        
-        // Update chat title
-        updateChatTitle("New conversation");
-      }
+      const deleteModal = document.getElementById('delete-modal');
+      deleteModal.classList.add('visible');
     });
     
     themeToggle.addEventListener('click', () => {
