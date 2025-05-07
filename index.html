@@ -187,22 +187,83 @@
     }
     
     .history-item {
-      padding: 10px 12px;
-      border-radius: 8px;
-      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-right: 5px; /* Extra space for buttons */
+      border-radius: 5px;
+
+    }
+
+    .history-item-info {
       display: flex;
       align-items: center;
       gap: 12px;
+      flex: 1;
       overflow: hidden;
-      white-space: nowrap;
-      text-overflow: ellipsis;
-      position: relative;
+      cursor: pointer;
+    }
+
+    .history-actions {
+      opacity: 0;
+      display: flex;
+      gap: 2px;
+      transition: opacity 0.2s;
+    }
+
+    .history-item:hover .history-actions {
+      opacity: 1;
+    }
+
+    .history-action-btn {
+      width: 24px;
+      height: 24px;
+      border-radius: 4px;
+      border: none;
+      background: transparent;
       color: var(--light-text);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       transition: background-color 0.2s;
     }
-    
-    .history-item:hover {
+
+    .history-action-btn:hover {
       background-color: var(--button-hover);
+      color: var(--text-color);
+    }
+
+    .active .history-action-btn {
+      color: white;
+    }
+
+    .active .history-action-btn:hover {
+      background-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .rename-input {
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid var(--primary-color);
+      color: var(--text-color);
+      font-family: inherit;
+      font-size: 0.9rem;
+      padding: 2px 0;
+      width: 100%;
+      outline: none;
+    }
+
+    /* Make actions always visible on mobile */
+    @media (max-width: 768px) {
+      .history-actions {
+        opacity: 1;
+      }
+      
+      .history-action-btn {
+        width: 28px; /* Larger tap targets */
+        height: 28px;
+      }
     }
     
     .history-item.active {
@@ -1093,6 +1154,83 @@
       from { transform: scale(0.8); opacity: 0; }
       to { transform: scale(1); opacity: 1; }
     }
+
+    /* Beautiful Code Result Styling */
+    pre.code-result {
+      background: linear-gradient(to bottom, var(--code-bg), rgba(52, 168, 83, 0.05)) !important;
+      border-left: 3px solid var(--secondary-color) !important;
+    }
+
+    body.dark-mode pre.code-result {
+      background: linear-gradient(to bottom, var(--code-bg), rgba(52, 168, 83, 0.1)) !important;
+    }
+
+    pre.code-result .code-header {
+      background-color: rgba(52, 168, 83, 0.1);
+    }
+
+    pre.code-result .code-language {
+      color: var(--secondary-color);
+      font-weight: 600;
+    }
+
+    /* Result content highlighting */
+    .result-success {
+      color: #34A853;
+      font-weight: bold;
+    }
+
+    .result-error {
+      color: #EA4335;
+      font-weight: bold;
+    }
+
+    .result-number {
+      color: #1A73E8;
+      font-weight: 500;
+    }
+
+    .result-boolean {
+      color: #9334E6;
+      font-weight: 600;
+    }
+
+    /* Split view for input/output pairs */
+    .input-output-pair {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin: 15px 0;
+      position: relative;
+    }
+
+    .input-output-pair::after {
+      content: "↓";
+      position: absolute;
+      left: 50%;
+      top: calc(50% - 12px);
+      width: 24px;
+      height: 24px;
+      margin-left: -12px;
+      background: var(--chat-bg);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--light-text);
+      box-shadow: 0 2px 4px var(--shadow-color);
+      font-weight: bold;
+    }
+
+    /* Animation for results that appear */
+    @keyframes highlight-result {
+      0% { background-color: rgba(52, 168, 83, 0.2); }
+      100% { background-color: transparent; }
+    }
+
+    .result-new {
+      animation: highlight-result 2s ease-out;
+    }
   </style>
   <script>
     // Mobile viewport height fix (especially for iOS Safari)
@@ -1232,6 +1370,24 @@
       <div class="modal-footer">
         <button id="delete-cancel" class="modal-button cancel-button">Cancel</button>
         <button id="delete-confirm" class="modal-button confirm-button">Clear</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Chat Modal -->
+  <div id="delete-chat-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Delete Chat</h3>
+        <button class="modal-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p>Are you sure you want to delete this chat?</p>
+        <p class="modal-warning">This action cannot be undone.</p>
+      </div>
+      <div class="modal-footer">
+        <button id="delete-chat-cancel" class="modal-button cancel-button">Cancel</button>
+        <button id="delete-chat-confirm" class="modal-button confirm-button">Delete</button>
       </div>
     </div>
   </div>
@@ -1381,6 +1537,21 @@
           deleteModal.classList.remove('visible');
         }
       });
+
+      // Set up delete chat modal
+      const deleteChatModal = document.getElementById('delete-chat-modal');
+      if (deleteChatModal) {
+        const deleteChatConfirm = document.getElementById('delete-chat-confirm');
+        const deleteChatCancel = document.getElementById('delete-chat-cancel');
+        const modalClose = deleteChatModal.querySelector('.modal-close');
+        
+        // Close with Escape key
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape' && deleteChatModal.classList.contains('visible')) {
+            deleteChatModal.classList.remove('visible');
+          }
+        });
+      }
     });
     
     // Event Listeners
@@ -1695,6 +1866,10 @@
         
         chatItem.dataset.chatId = chat.id;
         
+        // Chat info section (icon + title)
+        const chatInfo = document.createElement('div');
+        chatInfo.className = 'history-item-info';
+        
         const icon = document.createElement('span');
         icon.className = 'history-icon';
         icon.innerHTML = '<i class="fas fa-comment"></i>';
@@ -1703,12 +1878,43 @@
         title.className = 'history-title';
         title.textContent = chat.title;
         
-        chatItem.appendChild(icon);
-        chatItem.appendChild(title);
+        chatInfo.appendChild(icon);
+        chatInfo.appendChild(title);
         
-        chatItem.addEventListener('click', () => {
+        // Actions section (rename + delete)
+        const actions = document.createElement('div');
+        actions.className = 'history-actions';
+        
+        const renameBtn = document.createElement('button');
+        renameBtn.className = 'history-action-btn';
+        renameBtn.innerHTML = '<i class="fas fa-edit"></i>';
+        renameBtn.title = 'Rename chat';
+        
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'history-action-btn';
+        deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
+        deleteBtn.title = 'Delete chat';
+        
+        actions.appendChild(renameBtn);
+        actions.appendChild(deleteBtn);
+        
+        // Event listeners
+        chatInfo.addEventListener('click', () => {
           switchChat(chat.id);
         });
+        
+        renameBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          showRenameInput(chat.id, title);
+        });
+        
+        deleteBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          confirmDeleteChat(chat.id);
+        });
+        
+        chatItem.appendChild(chatInfo);
+        chatItem.appendChild(actions);
         
         chatHistoryContainer.appendChild(chatItem);
       });
@@ -1883,7 +2089,7 @@
             <div class="code-header">
               <span class="code-language">${langDisplay}</span>
               <button class="code-copy-button">
-                <i class="fas fa-copy"></i> Copy code
+                <i class="fas fa-copy"></i>
               </button>
             </div>
           `;
@@ -1915,7 +2121,10 @@
               });
             });
           });
-        }, 0);
+          
+          // Enhance code results
+          enhanceCodeResults();
+        }, 10);
       } else {
         // For user messages, just display text
         contentDiv.textContent = text;
@@ -2212,6 +2421,190 @@
       }
       lastTouchEnd = now;
     }, { passive: false });
+
+    // Add this function to detect and format code outputs/results
+    function enhanceCodeResults() {
+      // Find all code blocks in bot messages
+      const codeBlocks = document.querySelectorAll('.bot-msg .message-content pre code');
+      
+      codeBlocks.forEach(codeBlock => {
+        // Check if this might be a result block based on common patterns
+        const isResultBlock = codeBlock.textContent.includes('Output:') || 
+                              codeBlock.textContent.includes('Result:') ||
+                              codeBlock.textContent.includes('Console:') ||
+                              codeBlock.textContent.includes('> ') ||
+                              codeBlock.textContent.includes('stdout:');
+        
+        if (isResultBlock) {
+          // Add result class to pre element
+          const preElement = codeBlock.closest('pre');
+          preElement.classList.add('code-result');
+          
+          // Update the header to indicate this is a result
+          const headerElement = preElement.querySelector('.code-header');
+          if (headerElement) {
+            const langElement = headerElement.querySelector('.code-language');
+            if (langElement && !langElement.textContent.includes('Result')) {
+              langElement.textContent = `Result (${langElement.textContent})`;
+            }
+          }
+          
+          // Format result content with special highlighting
+          formatResultContent(codeBlock);
+        }
+      });
+    }
+
+    // Format the content of result blocks for better readability
+    function formatResultContent(codeBlock) {
+      let content = codeBlock.innerHTML;
+      
+      // Highlight success/failure indicators
+      content = content.replace(/(Success|Passed|OK)/gi, 
+        '<span class="result-success">$1</span>');
+      content = content.replace(/(Error|Failure|Failed|Exception|Warning)/gi, 
+        '<span class="result-error">$1</span>');
+      
+      // Highlight numbers and boolean values
+      content = content.replace(/\b(\d+\.?\d*)\b/g, 
+        '<span class="result-number">$1</span>');
+      content = content.replace(/\b(true|false)\b/gi, 
+        '<span class="result-boolean">$1</span>');
+      
+      // Apply the formatted content
+      codeBlock.innerHTML = content;
+    }
+
+    function showRenameInput(chatId, titleElement) {
+      const currentTitle = titleElement.textContent;
+      
+      // Create input for renaming
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.value = currentTitle;
+      input.className = 'rename-input';
+      
+      // Replace the title with the input
+      const parent = titleElement.parentNode;
+      parent.replaceChild(input, titleElement);
+      
+      // Focus and select all text
+      input.focus();
+      input.select();
+      
+      // Handle save on Enter, cancel on Escape
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          saveNewTitle();
+        } else if (e.key === 'Escape') {
+          cancelRename();
+        }
+      });
+      
+      // Save on blur (clicking elsewhere)
+      input.addEventListener('blur', saveNewTitle);
+      
+      function saveNewTitle() {
+        const newTitle = input.value.trim() || 'New conversation';
+        renameChatTitle(chatId, newTitle);
+        finishRename(newTitle);
+      }
+      
+      function cancelRename() {
+        finishRename(currentTitle);
+      }
+      
+      function finishRename(title) {
+        // Replace input with the title span
+        parent.replaceChild(titleElement, input);
+        titleElement.textContent = title;
+      }
+    }
+
+    function renameChatTitle(chatId, newTitle) {
+      const chatIndex = chats.findIndex(chat => chat.id === chatId);
+      if (chatIndex !== -1) {
+        chats[chatIndex].title = newTitle;
+        localStorage.setItem('geminiChats', JSON.stringify(chats));
+      }
+    }
+
+    function confirmDeleteChat(chatId) {
+      // Get chat title for confirmation message
+      const chat = chats.find(c => c.id === chatId);
+      const chatTitle = chat ? chat.title : 'this chat';
+      
+      // Update modal content
+      const deleteModal = document.getElementById('delete-chat-modal');
+      const messageElement = deleteModal.querySelector('.modal-body p:first-child');
+      messageElement.textContent = `Are you sure you want to delete "${chatTitle}"?`;
+      
+      // Store chat ID in the modal
+      deleteModal.dataset.chatId = chatId;
+      
+      // Show the modal
+      deleteModal.classList.add('visible');
+      
+      // Set up one-time handlers
+      const confirmBtn = document.getElementById('delete-chat-confirm');
+      const cancelBtn = document.getElementById('delete-chat-cancel');
+      const closeBtn = deleteModal.querySelector('.modal-close');
+      
+      const cleanup = () => {
+        deleteModal.classList.remove('visible');
+        confirmBtn.removeEventListener('click', handleConfirm);
+        cancelBtn.removeEventListener('click', handleCancel);
+        closeBtn.removeEventListener('click', handleCancel);
+        deleteModal.removeEventListener('click', handleOutsideClick);
+      };
+      
+      const handleConfirm = () => {
+        deleteChat(chatId);
+        cleanup();
+      };
+      
+      const handleCancel = () => {
+        cleanup();
+      };
+      
+      const handleOutsideClick = (e) => {
+        if (e.target === deleteModal) {
+          cleanup();
+        }
+      };
+      
+      confirmBtn.addEventListener('click', handleConfirm);
+      cancelBtn.addEventListener('click', handleCancel);
+      closeBtn.addEventListener('click', handleCancel);
+      deleteModal.addEventListener('click', handleOutsideClick);
+    }
+
+    function deleteChat(chatId) {
+      // Remove chat from the array
+      const chatIndex = chats.findIndex(chat => chat.id === chatId);
+      if (chatIndex === -1) return;
+      
+      // Remove from chats array
+      chats.splice(chatIndex, 1);
+      
+      // Delete chat history from localStorage
+      localStorage.removeItem(`geminiChatHistory_${chatId}`);
+      localStorage.setItem('geminiChats', JSON.stringify(chats));
+      
+      // If we deleted the active chat, switch to another or create new
+      if (chatId === activeChatId) {
+        if (chats.length > 0) {
+          // Switch to first available chat
+          switchChat(chats[0].id);
+        } else {
+          // No chats left, create a new one
+          createNewChat();
+        }
+      } else {
+        // Just refresh the UI
+        renderChatHistory();
+      }
+    }
   </script>
 </body>
 </html>
